@@ -1,0 +1,79 @@
+Revision history for XS-JIT
+
+0.23	2026-05-22
+	- Fix link order in the JIT compile/link command
+	- dl_load_file failure is now a croak() with the .so path and
+	  the underlying OS error, instead of a silent warn()
+	- Fix functions_already_loaded() short-circuit
+
+0.22	2026-05-09
+	- Builder->memoize: change the TTL comparison from `<` to `<=`.
+	  With time()'s 1-second granularity, 
+	- t/203-header-libc.t: move the C-compiler probe BEFORE use_ok
+	  so plan skip_all can trigger cleanly when no compiler is
+	  available. 
+
+0.21	2026-05-03
+	- Skip File::Temp cleanup on Windows/Cygwin/MSYS
+
+0.20	2026-05-01
+	- t/123-builder-jit-inheritance.t: replace alloca() with portable
+	  Newx/Safefree. 
+	- xs_jit_compile_file: handle Cygwin's $Config{libperl} naming
+	  ("cygperl5_40_3.dll" rather than "libperl..."), and fall back to
+	  -lperl when no parsable name is derivable.
+
+0.19	2026-04-28
+	- Capture compiler/linker stderr in xs_jit_compile_file: use
+	  popen()/pclose() (with _popen on Windows) so the contents of
+	  gcc's "2>&1" redirect actually reach the warn() output. Without
+	  this, every CPAN tester failure report just shows the cmd line
+	  with no clue why it failed.
+	- Fix Cygwin/MSYS linking: extend the Win32 link branch to handle
+	  __CYGWIN__ and __MSYS__, link against -lperl5XX, and add
+	  -Wl,--export-all-symbols. Cygwin previously fell through to the
+	  unix branch which doesn't link against perl, so every JIT
+	  module failed to link.
+	- Fix Perl_custom_op_register fallback for pre-5.14 Perls in both
+	  the static lib/XS/JIT/xs_jit_builder.h header and the JIT-emitted
+	  prologue from xs_jit.c.
+	- Skip "Force recompile succeeds" subtest in t/004-caching.t on
+	  MSWin32: Windows holds an exclusive lock on loaded DLLs, so
+	  in-process force recompile cannot overwrite the on-disk file.
+
+0.18	2026-04-07
+	- Fix Win32 linking: append -lperl5XX derived from $Config{libperl}
+	  (Windows DLLs must resolve all symbols at link time)
+	- Fix preprocessor detection on Win32: use File::Spec->devnull()
+	  instead of hardcoded /dev/null
+
+0.17	2026-04-06
+	- Various attempts at fixing cpantester failures
+
+0.15    2026-04-01
+	- Fixes for macOS hardened runtime
+                - SDK header resolution: use -iwithsysroot for Perl CORE includes
+	        - Fix dlopen failure, resolve relative paths to absolute
+
+0.14    2026-01-29
+	- Fix Windows build: use correct .def file for Builder.dll
+	  (was incorrectly using JIT.def which exports boot_XS__JIT instead of boot_XS__JIT__Builder)
+
+0.13    2026-01-29
+	- Attempt to fix C89 compatibility in generated code for roles and constructors
+
+0.12    2026-01-28
+	- Various attempts to fix cpantester fails
+
+0.11    2026-01-27
+        - Attempt to fix compilation on non-threaded Perl builds
+
+0.09    2026-01-26
+        - Added extra_cflags and extra_ldflags parameters to compile()
+        - Enables linking against external libraries (OpenSSL, etc.)
+        - Updated xs_jit_compile() and xs_jit_compile_file() C API
+        - Larger command buffer for complex compiler invocations
+
+0.01    Date/time
+        First version, released on an unsuspecting world.
+
